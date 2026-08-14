@@ -3,1021 +3,725 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAIT Wochenplaner - Vollständige App</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <title>MAIT Wochenplaner (Web Components - bearbeitet von meinGPT)</title>
     <style>
-        :root {
-            --bg: #f4f6f9;
-            --panel: #ffffff;
-            --border: #e2e6ec;
-            --text: #1f2733;
-            --muted: #6b7686;
-            --accent: #2f6bff;
-            --accent-soft: #eaf0ff;
-            --hour-h: 52px;
-            --shadow: 0 2px 10px rgba(20, 30, 50, .08);
-        }
-
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
-        wochenplaner-app {
-            display: block;
-            height: 100vh;
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        /* Wochenansicht */
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .week {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .day {
+            flex: 1;
+            min-width: 180px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .day-header {
+            font-weight: bold;
+            text-align: center;
+            background: #667eea;
+            color: white;
+            padding: 8px;
+            margin: -10px -10px 10px -10px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.9em;
+        }
+
+        /* Termine */
+        .event {
+            background: linear-gradient(135deg, #e0662a 0%, #ff8c42 100%);
+            color: white;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .event:hover {
+            background: linear-gradient(135deg, #ff8c42 0%, #e0662a 100%);
+            transform: translateY(-2px);
+        }
+
+        .event .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .event .delete-btn:hover {
+            opacity: 1;
+        }
+
+        .event-time {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+        }
+
+        .event-title {
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Buttons */
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #f0f4ff;
+            border-left: 5px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        /* Leere Woche Hinweis */
+        .empty-day {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .week-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .week {
+                flex-direction: column;
+            }
+
+            .day {
+                min-width: 100%;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+        }
+
+        /* Animationen */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
         }
     </style>
 </head>
 <body>
-    <wochenplaner-app></wochenplaner-app>
+    <div class="container">
+        <header>
+            <h1>📅 MAIT Wochenplaner (Web Components - bearbeitet von meinGPT)</h1>
+            <p>Dein intelligenter Wochenplaner mit Web Components und lokaler Speicherung</p>
+        </header>
+
+        <div class="content">
+            <!-- Wochen-Navigation -->
+            <div class="week-nav">
+                <button onclick="document.querySelector('wochenplaner-kalender').prevWeek()">← Vorige Woche</button>
+                <h2 id="week-title">Woche: 14.08.2026 – 18.08.2026</h2>
+                <button onclick="document.querySelector('wochenplaner-kalender').nextWeek()">Nächste Woche →</button>
+            </div>
+
+            <!-- Button Gruppe -->
+            <div class="button-group">
+                <button onclick="document.querySelector('wochenplaner-kalender').openModal()">➕ Neuer Termin</button>
+                <button onclick="document.querySelector('wochenplaner-kalender').saveToLocalStorage()">💾 Speichern</button>
+                <button onclick="document.querySelector('wochenplaner-kalender').loadFromLocalStorage()">📂 Laden</button>
+                <button onclick="document.querySelector('wochenplaner-kalender').clearAllEvents()" class="secondary">🗑 Alle löschen</button>
+                <button onclick="document.querySelector('wochenplaner-kalender').exportToJSON()" class="secondary">📥 JSON Export</button>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <strong>💡 Tipp:</strong> Diese Version wurde von <strong>meinGPT</strong> bearbeitet und erweitert. 
+                Termine werden im Browser gespeichert und bleiben auch nach dem Schließen erhalten. 
+                Nutze den JSON-Export, um deine Daten zu sichern.
+            </div>
+
+            <!-- Kalender Component -->
+            <wochenplaner-kalender id="kalender"></wochenplaner-kalender>
+        </div>
+    </div>
 
     <script>
-        // Konfiguration
-        const CONFIG = {
-            START_HOUR: 7,
-            END_HOUR: 19,
-            HOUR_H: 52,
-            SNAP_MIN: 15,
-            DAYS: ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"],
-            COLORS: ["#2f6bff", "#e0662a", "#12a150", "#a259e6", "#e0396f", "#0d9dc4", "#c99a12", "#5b6470"]
-        };
-
-        // Utility Funktionen
-        class Utils {
-            static getMonday(d) {
-                d = new Date(d);
-                const day = (d.getDay() + 6) % 7;
-                d.setDate(d.getDate() - day);
-                d.setHours(0, 0, 0, 0);
-                return d;
-            }
-
-            static addDays(d, n) {
-                const x = new Date(d);
-                x.setDate(x.getDate() + n);
-                return x;
-            }
-
-            static isoDate(d) {
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${y}-${m}-${dd}`;
-            }
-
-            static fmtDate(d) {
-                return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-            }
-
-            static minToTime(m) {
-                const h = Math.floor(m / 60);
-                const mm = m % 60;
-                return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-            }
-
-            static timeToMin(timeStr) {
-                const [h, m] = timeStr.split(':').map(Number);
-                return h * 60 + m;
-            }
-
-            static uid() {
-                return Math.random().toString(36).slice(2, 9);
-            }
-
-            static escapeHtml(s) {
-                return String(s).replace(/[&<>"']/g, c => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[c]));
-            }
-        }
-
-        // Hauptkomponente
-        class WochenplanerApp extends HTMLElement {
+        // Custom Element: Wochenplaner-Termin
+        class WochenplanerTermin extends HTMLElement {
             constructor() {
                 super();
                 this.attachShadow({ mode: 'open' });
-                this.currentMonday = Utils.getMonday(new Date());
-                this.projects = [];
-                this.events = [];
-                this.history = [];
-                this.currentHistoryIndex = -1;
-                this.selectedItem = null;
             }
 
             connectedCallback() {
-                this.loadData();
+                const title = this.getAttribute('titel') || 'Neuer Termin';
+                const start = this.getAttribute('start') || '00:00';
+                const end = this.getAttribute('end') || '00:00';
+                const id = this.getAttribute('id') || '';
+                const color = this.getAttribute('color') || '#e0662a';
+
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        .termin {
+                            background: ${color};
+                            color: white;
+                            padding: 8px;
+                            margin: 5px 0;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            position: relative;
+                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                            transition: all 0.2s ease;
+                        }
+                        .termin:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+                        }
+                        .delete-btn {
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            background: none;
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 14px;
+                            opacity: 0.7;
+                            transition: opacity 0.2s;
+                        }
+                        .delete-btn:hover {
+                            opacity: 1;
+                        }
+                        .event-time {
+                            font-weight: bold;
+                            font-size: 0.85em;
+                            margin-bottom: 3px;
+                        }
+                        .event-title {
+                            font-size: 0.9em;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                    </style>
+                    <div class="termin">
+                        <div class="event-time">${start} – ${end}</div>
+                        <div class="event-title">${title}</div>
+                        <button class="delete-btn" onclick="this.parentElement.parentElement.remove(); document.querySelector('wochenplaner-kalender').deleteEvent(${id})">✕</button>
+                    </div>
+                `;
+            }
+        }
+        customElements.define('wochenplaner-termin', WochenplanerTermin);
+
+        // Custom Element: Wochenplaner-Kalender
+        class WochenplanerKalender extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                this.currentMonday = new Date();
+                this.currentMonday.setDate(this.currentMonday.getDate() - this.currentMonday.getDay() + 1);
+                this.events = JSON.parse(localStorage.getItem('wochenplaner-events')) || [];
+                this.days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+                this.colors = ['#2f6bff', '#e0662a', '#12a150', '#a259e6', '#e0396f', '#0d9dc4', '#c99a12', '#5b6470'];
+                this.nextId = this.events.length > 0 ? Math.max(...this.events.map(e => e.id)) + 1 : 1;
+            }
+
+            connectedCallback() {
                 this.render();
-                this.setupEventListeners();
+                this.updateWeekTitle();
             }
 
-            loadData() {
-                try {
-                    const saved = localStorage.getItem('wochenplan_data');
-                    if (saved) {
-                        const data = JSON.parse(saved);
-                        this.projects = data.projects || [];
-                        this.events = data.events || [];
-                        this.currentMonday = new Date(data.currentMonday || Utils.getMonday(new Date()));
-                    } else {
-                        this.projects = [{
-                            id: Utils.uid(),
-                            name: "Beispielprojekt",
-                            color: CONFIG.COLORS[0],
-                            tasks: [
-                                { id: Utils.uid(), name: "Konzept erstellen" },
-                                { id: Utils.uid(), name: "Abstimmung Team" }
-                            ]
-                        }];
-                        this.events = [];
-                    }
-                } catch (error) {
-                    console.error("Fehler beim Laden der Daten:", error);
-                    this.showNotification("Fehler beim Laden der Daten");
-                }
-            }
-
-            saveData() {
-                try {
-                    const data = {
-                        projects: this.projects,
-                        events: this.events,
-                        currentMonday: this.currentMonday.toISOString()
-                    };
-                    localStorage.setItem('wochenplan_data', JSON.stringify(data));
-                } catch (error) {
-                    console.error("Fehler beim Speichern der Daten:", error);
-                    this.showNotification("Fehler beim Speichern der Daten");
+            updateWeekTitle() {
+                const endDate = new Date(this.currentMonday);
+                endDate.setDate(endDate.getDate() + 4);
+                const weekTitle = document.getElementById('week-title');
+                if (weekTitle) {
+                    weekTitle.textContent = `Woche: ${this.formatDate(this.currentMonday)} – ${this.formatDate(endDate)}`;
                 }
             }
 
             render() {
-                this.shadowRoot.innerHTML = `
-                    <style>
-                        :host {
-                            display: flex;
-                            flex-direction: column;
-                            height: 100%;
-                            background: var(--bg);
-                        }
+                const weekDiv = document.createElement('div');
+                weekDiv.className = 'week';
+                weekDiv.innerHTML = this.days.map((day, i) => {
+                    const dayDate = new Date(this.currentMonday);
+                    dayDate.setDate(dayDate.getDate() + i);
+                    const dayISO = dayDate.toISOString().split('T')[0];
+                    const dayEvents = this.events.filter(e => e.day === day && e.date === dayISO);
 
-                        header {
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            padding: 12px 20px;
-                            background: var(--panel);
-                            border-bottom: 1px solid var(--border);
-                            box-shadow: var(--shadow);
-                            gap: 16px;
-                            flex-wrap: wrap;
-                        }
+                    const eventsHtml = dayEvents.length > 0 ?
+                        dayEvents.map(event => `
+                            <wochenplaner-termin
+                                id="${event.id}"
+                                titel="${event.title}"
+                                start="${event.start}"
+                                end="${event.end}"
+                                day="${event.day}"
+                                date="${event.date}"
+                                color="${event.color}">
+                            </wochenplaner-termin>
+                        `).join('') :
+                        '<p class="empty-day">Keine Termine</p>';
 
-                        header h1 {
-                            font-size: 18px;
-                            font-weight: 600;
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                        }
-
-                        header h1 .dot {
-                            width: 10px;
-                            height: 10px;
-                            border-radius: 50%;
-                            background: var(--accent);
-                        }
-
-                        .toolbar {
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                            flex-wrap: wrap;
-                        }
-
-                        button {
-                            border: 1px solid var(--border);
-                            background: #fff;
-                            border-radius: 8px;
-                            padding: 7px 12px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            transition: .15s;
-                        }
-
-                        button:hover {
-                            background: var(--accent-soft);
-                            border-color: var(--accent);
-                        }
-
-                        .btn-primary {
-                            background: var(--accent);
-                            color: #fff;
-                            border-color: var(--accent);
-                        }
-
-                        .btn-primary:hover {
-                            background: #2559d8;
-                        }
-
-                        .week-label {
-                            font-weight: 600;
-                            min-width: 210px;
-                            text-align: center;
-                            font-size: 14px;
-                        }
-
-                        .layout {
-                            display: flex;
-                            flex: 1;
-                            overflow: hidden;
-                        }
-
-                        .sidebar {
-                            width: 330px;
-                            background: var(--panel);
-                            border-left: 1px solid var(--border);
-                            display: flex;
-                            flex-direction: column;
-                            overflow: hidden;
-                        }
-
-                        .sidebar-header {
-                            padding: 14px 16px;
-                            border-bottom: 1px solid var(--border);
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                        }
-
-                        .projects {
-                            flex: 1;
-                            overflow: auto;
-                            padding: 12px;
-                        }
-
-                        .project {
-                            border: 1px solid var(--border);
-                            border-radius: 10px;
-                            margin-bottom: 12px;
-                            overflow: hidden;
-                        }
-
-                        .project-head {
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            padding: 10px 12px;
-                            background: #fafbfd;
-                            font-weight: 600;
-                            font-size: 14px;
-                        }
-
-                        .project-head .color-tag {
-                            width: 14px;
-                            height: 14px;
-                            border-radius: 4px;
-                            flex-shrink: 0;
-                            cursor: pointer;
-                        }
-
-                        .project-head .p-name {
-                            flex: 1;
-                            outline: none;
-                            border: none;
-                            background: transparent;
-                            font-weight: 600;
-                            font-size: 14px;
-                            padding: 2px 4px;
-                        }
-
-                        .project-head .p-actions {
-                            display: flex;
-                            gap: 4px;
-                        }
-
-                        .project-head button {
-                            padding: 2px 6px;
-                            font-size: 14px;
-                            background: none;
-                            border: none;
-                            cursor: pointer;
-                        }
-
-                        .tasks {
-                            padding: 6px 10px 10px;
-                        }
-
-                        .task {
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            padding: 8px 10px;
-                            margin: 6px 0;
-                            border-radius: 8px;
-                            cursor: grab;
-                            font-size: 13px;
-                            color: #fff;
-                            box-shadow: var(--shadow);
-                            position: relative;
-                        }
-
-                        .task .t-name {
-                            flex: 1;
-                            outline: none;
-                            border: none;
-                            background: transparent;
-                            color: #fff;
-                            font-size: 13px;
-                            padding: 2px 4px;
-                        }
-
-                        .task .badge {
-                            position: absolute;
-                            top: -6px;
-                            right: -6px;
-                            background: #fff;
-                            color: var(--muted);
-                            border: 1px solid var(--border);
-                            border-radius: 10px;
-                            font-size: 10px;
-                            padding: 1px 5px;
-                            font-weight: 600;
-                        }
-
-                        .calendar-wrap {
-                            flex: 1;
-                            overflow: auto;
-                            background: var(--panel);
-                        }
-
-                        .calendar {
-                            display: grid;
-                            grid-template-columns: 60px repeat(5, 1fr);
-                            min-width: 760px;
-                        }
-
-                        .cal-head .cell {
-                            position: sticky;
-                            top: 0;
-                            z-index: 3;
-                            background: var(--panel);
-                            padding: 10px 6px;
-                            text-align: center;
-                            border-right: 1px solid var(--border);
-                            border-bottom: 2px solid var(--border);
-                            font-weight: 600;
-                            font-size: 13px;
-                        }
-
-                        .cal-head .cell small {
-                            display: block;
-                            color: var(--muted);
-                            font-weight: 400;
-                            font-size: 11px;
-                            margin-top: 2px;
-                        }
-
-                        .corner {
-                            position: sticky;
-                            top: 0;
-                            z-index: 3;
-                            background: var(--panel);
-                            border-bottom: 2px solid var(--border);
-                        }
-
-                        .time-col .time-cell {
-                            height: var(--hour-h);
-                            border-right: 1px solid var(--border);
-                            border-bottom: 1px solid var(--border);
-                            font-size: 11px;
-                            color: var(--muted);
-                            text-align: right;
-                            padding: 2px 6px;
-                        }
-
-                        .day-col {
-                            position: relative;
-                            border-right: 1px solid var(--border);
-                        }
-
-                        .hour-slot {
-                            height: var(--hour-h);
-                            border-bottom: 1px solid var(--border);
-                            position: relative;
-                        }
-
-                        .event {
-                            position: absolute;
-                            left: 4px;
-                            right: 4px;
-                            border-radius: 8px;
-                            padding: 6px 8px;
-                            color: #fff;
-                            font-size: 12px;
-                            overflow: hidden;
-                            cursor: grab;
-                            box-shadow: var(--shadow);
-                            z-index: 2;
-                            user-select: none;
-                            border: 1px solid rgba(255, 255, 255, .25);
-                        }
-
-                        .event .ev-title {
-                            font-weight: 600;
-                            line-height: 1.2;
-                        }
-
-                        .event .ev-time {
-                            font-size: 10px;
-                            opacity: .9;
-                            margin-top: 2px;
-                        }
-
-                        .event .ev-del {
-                            position: absolute;
-                            top: 3px;
-                            right: 5px;
-                            cursor: pointer;
-                            font-size: 13px;
-                            line-height: 1;
-                            opacity: 0;
-                            transition: .15s;
-                        }
-
-                        .event:hover .ev-del {
-                            opacity: 1;
-                        }
-
-                        .notification {
-                            position: fixed;
-                            top: 20px;
-                            right: 20px;
-                            background: var(--panel);
-                            border: 1px solid var(--border);
-                            border-radius: 8px;
-                            padding: 12px 16px;
-                            box-shadow: var(--shadow);
-                            z-index: 100;
-                            display: none;
-                        }
-
-                        .notification.show {
-                            display: block;
-                        }
-                    </style>
-
-                    <header>
-                        <h1><span class="dot"></span> MAIT Wochenplan</h1>
-                        <div class="toolbar">
-                            <button id="importBtn" class="btn-primary">⭳ Excel/TXT importieren</button>
-                            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt" style="display:none">
-                            <button id="prevWeek">‹ Vorige</button>
-                            <span class="week-label" id="weekLabel"></span>
-                            <button id="nextWeek">Nächste ›</button>
-                            <button id="todayBtn">Heute</button>
-                            <button id="exportWeek" class="btn-primary">📋 Woche exportieren</button>
-                            <button id="clearEvents">🗑 Termine leeren</button>
-                        </div>
-                    </header>
-
-                    <div class="layout">
-                        <div class="sidebar">
-                            <div class="sidebar-header">
-                                <h2 style="margin: 0; font-size: 15px;">📋 Projekte</h2>
-                                <button id="addProject" style="padding: 6px 10px; background: var(--accent); color: #fff; border: none;">+ Projekt</button>
-                            </div>
-                            <div class="projects" id="projects"></div>
-                        </div>
-
-                        <div class="calendar-wrap">
-                            <div class="calendar" id="calendar"></div>
-                        </div>
-                    </div>
-
-                    <div class="notification" id="notification">
-                        <span id="notificationText"></span>
-                    </div>
-                `;
-
-                // Nach dem Rendern: Kalender, Projekte, Labels aktualisieren
-                this.updateCalendar();
-                this.updateProjects();
-                this.updateWeekLabel();
-            }
-
-            updateCalendar() {
-                const cal = this.shadowRoot.getElementById('calendar');
-                cal.innerHTML = '';
-
-                const todayISO = Utils.isoDate(new Date());
-                const corner = document.createElement('div');
-                corner.className = 'corner';
-                cal.appendChild(corner);
-
-                const dayDates = [];
-                for (let i = 0; i < 5; i++) {
-                    const d = Utils.addDays(this.currentMonday, i);
-                    dayDates.push(d);
-                    const wrap = document.createElement('div');
-                    wrap.className = 'cal-head';
-                    const c = document.createElement('div');
-                    c.className = 'cell';
-                    c.innerHTML = CONFIG.DAYS[i] + '<small>' + Utils.fmtDate(d) + '</small>';
-                    wrap.appendChild(c);
-                    cal.appendChild(wrap);
-                }
-
-                const timeCol = document.createElement('div');
-                timeCol.className = 'time-col';
-                for (let h = CONFIG.START_HOUR; h < CONFIG.END_HOUR; h++) {
-                    const t = document.createElement('div');
-                    t.className = 'time-cell';
-                    t.textContent = String(h).padStart(2, '0') + ':00';
-                    timeCol.appendChild(t);
-                }
-                cal.appendChild(timeCol);
-
-                dayDates.forEach((d, dayIndex) => {
-                    const col = document.createElement('div');
-                    col.className = 'day-col';
-                    col.dataset.date = Utils.isoDate(d);
-                    for (let h = CONFIG.START_HOUR; h < CONFIG.END_HOUR; h++) {
-                        const slot = document.createElement('div');
-                        slot.className = 'hour-slot';
-                        col.appendChild(slot);
-                    }
-                    cal.appendChild(col);
-
-                    // Events hinzufügen
-                    this.events.forEach(ev => {
-                        if (ev.dateISO === col.dataset.date) {
-                            const el = document.createElement('div');
-                            el.className = 'event';
-                            el.style.background = ev.color;
-                            el.style.top = ((ev.startMin - CONFIG.START_HOUR * 60) / 60 * CONFIG.HOUR_H) + 'px';
-                            el.style.height = (ev.durMin / 60 * CONFIG.HOUR_H) + 'px';
-                            el.dataset.id = ev.id;
-                            el.innerHTML = `
-                                <span class="ev-del" title="Löschen">✕</span>
-                                <div class="ev-title">${Utils.escapeHtml(ev.title)}</div>
-                                <div class="ev-time">${Utils.minToTime(ev.startMin)}–${Utils.minToTime(ev.startMin + ev.durMin)}</div>
-                            `;
-                            el.querySelector('.ev-del').addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                this.events = this.events.filter(x => x.id !== ev.id);
-                                this.saveData();
-                                this.updateCalendar();
-                            });
-                            col.appendChild(el);
-                        }
-                    });
-                });
-            }
-
-            updateProjects() {
-                const wrap = this.shadowRoot.getElementById('projects');
-                wrap.innerHTML = '';
-                this.projects.forEach(p => {
-                    const box = document.createElement('div');
-                    box.className = 'project';
-                    box.dataset.id = p.id;
-
-                    const head = document.createElement('div');
-                    head.className = 'project-head';
-                    head.innerHTML = `
-                        <span class="color-tag" style="background:${p.color}" title="Farbe ändern"></span>
-                        <input class="p-name" type="text" value="${Utils.escapeHtml(p.name)}" title="Projekt umbenennen">
-                        <div class="p-actions">
-                            <button class="p-add" title="Aufgabe hinzufügen">＋</button>
-                            <button class="p-del" title="Projekt löschen">🗑</button>
+                    return `
+                        <div class="day fade-in">
+                            <div class="day-header">${day} (${this.formatDate(dayDate)})</div>
+                            ${eventsHtml}
                         </div>
                     `;
+                }).join('');
 
-                    const nameInput = head.querySelector('.p-name');
-                    nameInput.addEventListener('blur', e => {
-                        p.name = e.target.value.trim() || 'Projekt';
-                        this.saveData();
-                        this.updateProjects();
-                    });
-
-                    head.querySelector('.color-tag').addEventListener('click', () => {
-                        const i = CONFIG.COLORS.indexOf(p.color);
-                        p.color = CONFIG.COLORS[(i + 1) % CONFIG.COLORS.length];
-                        this.events.forEach(ev => {
-                            if (ev.projectId === p.id) {
-                                ev.color = p.color;
-                            }
-                        });
-                        this.saveData();
-                        this.updateProjects();
-                        this.updateCalendar();
-                    });
-
-                    head.querySelector('.p-add').addEventListener('click', () => {
-                        p.tasks.push({ id: Utils.uid(), name: "Neue Aufgabe" });
-                        this.saveData();
-                        this.updateProjects();
-                    });
-
-                    head.querySelector('.p-del').addEventListener('click', () => {
-                        const eventCount = this.events.filter(ev => ev.projectId === p.id).length;
-                        const taskCount = p.tasks.length;
-                        if (confirm(`Projekt "${p.name}" löschen?\n\n${eventCount} Termine und ${taskCount} Aufgaben werden gelöscht.`)) {
-                            this.events = this.events.filter(ev => ev.projectId !== p.id);
-                            this.projects = this.projects.filter(x => x.id !== p.id);
-                            this.saveData();
-                            this.updateProjects();
-                            this.updateCalendar();
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        .week {
+                            display: flex;
+                            gap: 10px;
+                            overflow-x: auto;
+                            padding-bottom: 10px;
                         }
-                    });
-
-                    box.appendChild(head);
-
-                    const tasksDiv = document.createElement('div');
-                    tasksDiv.className = 'tasks';
-                    if (p.tasks.length === 0) {
-                        const em = document.createElement('div');
-                        em.style.cssText = 'font-size: 12px; color: var(--muted); padding: 6px 4px; font-style: italic;';
-                        em.textContent = 'Keine Aufgaben – ＋ oder Termin hierher ziehen';
-                        tasksDiv.appendChild(em);
-                    }
-
-                    p.tasks.forEach(t => {
-                        const tEl = document.createElement('div');
-                        tEl.className = 'task';
-                        tEl.style.background = p.color;
-                        tEl.draggable = true;
-                        tEl.dataset.id = t.id;
-                        tEl.dataset.type = 'task';
-
-                        const occurrences = this.countTaskOccurrences(t.id);
-                        if (occurrences > 1) {
-                            tEl.innerHTML = `
-                                <span style="opacity: .7; font-size: 13px;">⠿</span>
-                                <input class="t-name" type="text" value="${Utils.escapeHtml(t.name)}" title="Aufgabe umbenennen">
-                                <button style="background: none; border: none; color: #fff; opacity: .7; font-size: 14px; cursor: pointer;" class="t-del" title="Löschen">✕</button>
-                                <span class="badge">${occurrences}×</span>
-                            `;
-                        } else {
-                            tEl.innerHTML = `
-                                <span style="opacity: .7; font-size: 13px;">⠿</span>
-                                <input class="t-name" type="text" value="${Utils.escapeHtml(t.name)}" title="Aufgabe umbenennen">
-                                <button style="background: none; border: none; color: #fff; opacity: .7; font-size: 14px; cursor: pointer;" class="t-del" title="Löschen">✕</button>
-                            `;
+                        .day {
+                            flex: 1;
+                            min-width: 180px;
+                            border: 1px solid #ddd;
+                            padding: 10px;
+                            border-radius: 8px;
+                            background: white;
+                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                         }
-
-                        const taskNameInput = tEl.querySelector('.t-name');
-                        taskNameInput.addEventListener('blur', e => {
-                            t.name = e.target.value.trim() || 'Aufgabe';
-                            this.saveData();
-                            this.updateProjects();
-                        });
-
-                        tEl.querySelector('.t-del').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            p.tasks = p.tasks.filter(x => x.id !== t.id);
-                            this.events = this.events.filter(ev => ev.taskId !== t.id);
-                            this.saveData();
-                            this.updateProjects();
-                            this.updateCalendar();
-                        });
-
-                        tEl.addEventListener('dragstart', e => {
-                            e.dataTransfer.setData('application/json', JSON.stringify({
-                                name: t.name,
-                                color: p.color,
-                                type: 'task',
-                                id: t.id,
-                                projectId: p.id
-                            }));
-                            e.dataTransfer.effectAllowed = 'copy';
-                        });
-
-                        tasksDiv.appendChild(tEl);
-                    });
-
-                    box.appendChild(tasksDiv);
-                    wrap.appendChild(box);
-                });
-            }
-
-            countTaskOccurrences(taskId) {
-                let count = 0;
-                const currentWeekStart = Utils.getMonday(this.currentMonday);
-                const prevWeekStart = Utils.addDays(currentWeekStart, -7);
-                const nextWeekStart = Utils.addDays(currentWeekStart, 7);
-
-                for (let i = 0; i < 5; i++) {
-                    const dateISO = Utils.isoDate(Utils.addDays(currentWeekStart, i));
-                    if (this.events.some(ev => ev.taskId === taskId && ev.dateISO === dateISO)) count++;
-                }
-
-                for (let i = 0; i < 5; i++) {
-                    const dateISO = Utils.isoDate(Utils.addDays(prevWeekStart, i));
-                    if (this.events.some(ev => ev.taskId === taskId && ev.dateISO === dateISO)) count++;
-                }
-
-                for (let i = 0; i < 5; i++) {
-                    const dateISO = Utils.isoDate(Utils.addDays(nextWeekStart, i));
-                    if (this.events.some(ev => ev.taskId === taskId && ev.dateISO === dateISO)) count++;
-                }
-
-                return count;
-            }
-
-            updateWeekLabel() {
-                const end = Utils.addDays(this.currentMonday, 4);
-                const label = this.shadowRoot.getElementById('weekLabel');
-                if (label) {
-                    label.textContent = Utils.fmtDate(this.currentMonday) + ' – ' + Utils.fmtDate(end) + '.' + this.currentMonday.getFullYear();
-                }
-            }
-
-            setupEventListeners() {
-                const importBtn = this.shadowRoot.getElementById('importBtn');
-                const fileInput = this.shadowRoot.getElementById('fileInput');
-                const prevBtn = this.shadowRoot.getElementById('prevWeek');
-                const nextBtn = this.shadowRoot.getElementById('nextWeek');
-                const todayBtn = this.shadowRoot.getElementById('todayBtn');
-                const exportBtn = this.shadowRoot.getElementById('exportWeek');
-                const clearBtn = this.shadowRoot.getElementById('clearEvents');
-                const addProjectBtn = this.shadowRoot.getElementById('addProject');
-
-                if (importBtn) importBtn.addEventListener('click', () => fileInput.click());
-                if (fileInput) fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-                if (prevBtn) prevBtn.addEventListener('click', () => {
-                    this.currentMonday = Utils.addDays(this.currentMonday, -7);
-                    this.saveData();
-                    this.updateCalendar();
-                    this.updateWeekLabel();
-                });
-                if (nextBtn) nextBtn.addEventListener('click', () => {
-                    this.currentMonday = Utils.addDays(this.currentMonday, 7);
-                    this.saveData();
-                    this.updateCalendar();
-                    this.updateWeekLabel();
-                });
-                if (todayBtn) todayBtn.addEventListener('click', () => {
-                    this.currentMonday = Utils.getMonday(new Date());
-                    this.saveData();
-                    this.updateCalendar();
-                    this.updateWeekLabel();
-                });
-                if (exportBtn) exportBtn.addEventListener('click', () => this.exportWeek());
-                if (clearBtn) clearBtn.addEventListener('click', () => {
-                    if (confirm('Alle Termine im Kalender löschen?')) {
-                        this.events = [];
-                        this.saveData();
-                        this.updateCalendar();
-                    }
-                });
-                if (addProjectBtn) addProjectBtn.addEventListener('click', () => {
-                    this.projects.push({
-                        id: Utils.uid(),
-                        name: "Neues Projekt",
-                        color: CONFIG.COLORS[this.projects.length % CONFIG.COLORS.length],
-                        tasks: []
-                    });
-                    this.saveData();
-                    this.updateProjects();
-                });
-
-                // Drag & Drop Setup für Kalender
-                const calendarWrap = this.shadowRoot.querySelector('.calendar-wrap');
-                if (calendarWrap) {
-                    document.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                    });
-
-                    this.shadowRoot.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                    });
-
-                    this.shadowRoot.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        const data = e.dataTransfer.getData('application/json');
-                        if (!data) return;
-                        const { name, color, type, id, projectId } = JSON.parse(data);
-
-                        if (type === 'task') {
-                            const rect = calendarWrap.getBoundingClientRect();
-                            const y = e.clientY - rect.top;
-                            const colWidth = rect.width / 5;
-                            const dayIndex = Math.floor((e.clientX - rect.left) / colWidth);
-
-                            if (dayIndex >= 0 && dayIndex < 5) {
-                                const d = Utils.addDays(this.currentMonday, dayIndex);
-                                let startMin = CONFIG.START_HOUR * 60 + Math.round((y / CONFIG.HOUR_H * 60) / CONFIG.SNAP_MIN) * CONFIG.SNAP_MIN;
-                                startMin = Math.max(CONFIG.START_HOUR * 60, Math.min(startMin, CONFIG.END_HOUR * 60 - 60));
-
-                                this.events.push({
-                                    id: Utils.uid(),
-                                    title: name,
-                                    color: color || CONFIG.COLORS[0],
-                                    dateISO: Utils.isoDate(d),
-                                    startMin,
-                                    durMin: 60,
-                                    taskId: id,
-                                    projectId: projectId
-                                });
-
-                                this.saveData();
-                                this.updateCalendar();
-                                this.showNotification('Aufgabe in den Kalender geplant');
-                            }
+                        .day-header {
+                            font-weight: bold;
+                            text-align: center;
+                            background: #667eea;
+                            color: white;
+                            padding: 8px;
+                            margin: -10px -10px 10px -10px;
+                            border-radius: 8px 8px 0 0;
+                            font-size: 0.9em;
                         }
-                    });
-                }
+                        .modal {
+                            display: none;
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.5);
+                            z-index: 1000;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        .modal.active {
+                            display: flex;
+                        }
+                        .modal-content {
+                            background: white;
+                            padding: 25px;
+                            border-radius: 10px;
+                            width: 90%;
+                            max-width: 450px;
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                            animation: modalFadeIn 0.3s ease;
+                        }
+                        @keyframes modalFadeIn {
+                            from { opacity: 0; transform: translateY(-20px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                        .modal-content h2 {
+                            color: #667eea;
+                            margin-bottom: 15px;
+                            font-size: 1.5em;
+                        }
+                        input, select {
+                            width: 100%;
+                            padding: 10px;
+                            margin: 8px 0;
+                            border: 1px solid #ddd;
+                            border-radius: 5px;
+                            font-size: 1em;
+                            box-sizing: border-box;
+                        }
+                        input:focus, select:focus {
+                            outline: none;
+                            border-color: #667eea;
+                            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+                        }
+                        button {
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            font-size: 1em;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            font-weight: 600;
+                            margin: 5px;
+                        }
+                        button:hover {
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+                        }
+                        button.secondary {
+                            background: #6c757d;
+                        }
+                        button.secondary:hover {
+                            background: #5a6268;
+                            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+                        }
+                        .empty-day {
+                            color: #999;
+                            font-style: italic;
+                            text-align: center;
+                            padding: 20px 0;
+                        }
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        .fade-in {
+                            animation: fadeIn 0.5s ease;
+                        }
+                    </style>
+                    ${weekDiv.outerHTML}
+                    <div class="modal" id="modal">
+                        <div class="modal-content">
+                            <h2>Neuer Termin</h2>
+                            <input type="text" id="event-title" placeholder="Titel" required>
+                            <select id="event-day">
+                                ${this.days.map(day => `<option value="${day}">${day}</option>`).join('')}
+                            </select>
+                            <input type="date" id="event-date" required>
+                            <select id="event-color">
+                                ${this.colors.map((color, index) => `<option value="${color}">${['Blau', 'Orange', 'Grün', 'Lila', 'Pink', 'Türkis', 'Gelb', 'Grau'][index]}</option>`).join('')}
+                            </select>
+                            <input type="time" id="event-start" placeholder="Startzeit" required>
+                            <input type="time" id="event-end" placeholder="Endzeit" required>
+                            <button onclick="document.querySelector('wochenplaner-kalender').addEvent()">Termin hinzufügen</button>
+                            <button onclick="document.querySelector('wochenplaner-kalender').closeModal()" class="secondary">Abbrechen</button>
+                        </div>
+                    </div>
+                `;
             }
 
-            handleFileUpload(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const isTxt = file.name.toLowerCase().endsWith('.txt');
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    if (isTxt) {
-                        this.handleTxtImport(ev.target.result);
-                    } else {
-                        this.handleExcelImport(new Uint8Array(ev.target.result));
-                    }
+            formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}.${month}.${year}`;
+            }
+
+            prevWeek() {
+                this.currentMonday.setDate(this.currentMonday.getDate() - 7);
+                this.updateWeekTitle();
+                this.render();
+            }
+
+            nextWeek() {
+                this.currentMonday.setDate(this.currentMonday.getDate() + 7);
+                this.updateWeekTitle();
+                this.render();
+            }
+
+            openModal() {
+                const today = new Date(this.currentMonday);
+                today.setDate(today.getDate() + (today.getDay() === 0 ? 1 : 7 - today.getDay() + 1));
+                this.shadowRoot.getElementById('modal').classList.add('active');
+                this.shadowRoot.getElementById('event-date').valueAsDate = today;
+            }
+
+            closeModal() {
+                this.shadowRoot.getElementById('modal').classList.remove('active');
+            }
+
+            addEvent() {
+                const title = this.shadowRoot.getElementById('event-title').value;
+                const day = this.shadowRoot.getElementById('event-day').value;
+                const date = this.shadowRoot.getElementById('event-date').value;
+                const color = this.shadowRoot.getElementById('event-color').value;
+                const start = this.shadowRoot.getElementById('event-start').value;
+                const end = this.shadowRoot.getElementById('event-end').value;
+
+                if (!title || !day || !date || !start || !end) {
+                    alert('Bitte alle Felder ausfüllen!');
+                    return;
+                }
+
+                const newEvent = {
+                    id: this.nextId++,
+                    title,
+                    day,
+                    date,
+                    start,
+                    end,
+                    color
                 };
-                if (isTxt) {
-                    reader.readAsText(file);
+
+                this.events.push(newEvent);
+                this.render();
+                this.closeModal();
+            }
+
+            deleteEvent(id) {
+                this.events = this.events.filter(e => e.id !== id);
+                this.render();
+            }
+
+            saveToLocalStorage() {
+                localStorage.setItem('wochenplaner-events', JSON.stringify(this.events));
+                alert('✅ Termine wurden im Browser gespeichert!');
+            }
+
+            loadFromLocalStorage() {
+                const savedEvents = localStorage.getItem('wochenplaner-events');
+                if (savedEvents) {
+                    this.events = JSON.parse(savedEvents);
+                    this.nextId = this.events.length > 0 ? Math.max(...this.events.map(e => e.id)) + 1 : 1;
+                    this.render();
+                    alert('✅ Termine wurden geladen!');
                 } else {
-                    reader.readAsArrayBuffer(file);
+                    alert('⚠️ Keine gespeicherten Termine gefunden!');
                 }
-                e.target.value = '';
             }
 
-            handleTxtImport(txt) {
-                const lines = txt.trim().split('\n').filter(l => l.trim());
-                if (lines.length === 0) {
-                    this.showNotification('Keine Zeilen in der Datei gefunden');
-                    return;
+            clearAllEvents() {
+                if (confirm('Möchtest du wirklich alle Termine löschen?')) {
+                    this.events = [];
+                    this.nextId = 1;
+                    this.render();
+                    localStorage.removeItem('wochenplaner-events');
+                    alert('🗑 Alle Termine wurden gelöscht!');
                 }
-
-                let imported = 0, skipped = 0;
-                let firstDate = null;
-
-                lines.forEach(line => {
-                    const parts = line.split('|').map(p => p.trim());
-                    if (parts.length >= 3) {
-                        const title = parts[0];
-                        const startDate = new Date(parts[1]);
-                        const startTime = Utils.timeToMin(parts[2]);
-
-                        if (!isNaN(startDate.getTime())) {
-                            const dow = (startDate.getDay() + 6) % 7;
-                            if (dow < 5) {
-                                this.events.push({
-                                    id: Utils.uid(),
-                                    title: title,
-                                    color: CONFIG.COLORS[imported % CONFIG.COLORS.length],
-                                    dateISO: Utils.isoDate(startDate),
-                                    startMin: startTime,
-                                    durMin: 60
-                                });
-
-                                if (!firstDate || startDate < firstDate) firstDate = startDate;
-                                imported++;
-                            } else {
-                                skipped++;
-                            }
-                        }
-                    }
-                });
-
-                if (firstDate) {
-                    this.currentMonday = Utils.getMonday(firstDate);
-                }
-
-                this.saveData();
-                this.updateCalendar();
-                this.updateWeekLabel();
-                this.showNotification(`${imported} Termine importiert.` + (skipped ? ` ${skipped} übersprungen.` : ''));
             }
 
-            handleExcelImport(data) {
-                const wb = XLSX.read(data, { type: 'array', cellDates: true });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
-
-                if (rows.length === 0) {
-                    this.showNotification('Keine Zeilen in der Datei gefunden');
-                    return;
-                }
-
-                let imported = 0, skipped = 0;
-                let firstDate = null;
-
-                rows.forEach(row => {
-                    const title = Object.values(row)[0] || 'Termin';
-                    const dateStr = Object.values(row)[1];
-                    const timeStr = Object.values(row)[2];
-
-                    if (dateStr) {
-                        const startDate = new Date(dateStr);
-                        if (!isNaN(startDate.getTime())) {
-                            const dow = (startDate.getDay() + 6) % 7;
-                            if (dow < 5) {
-                                const startMin = timeStr ? Utils.timeToMin(timeStr) : CONFIG.START_HOUR * 60 + 60;
-
-                                this.events.push({
-                                    id: Utils.uid(),
-                                    title: title,
-                                    color: CONFIG.COLORS[imported % CONFIG.COLORS.length],
-                                    dateISO: Utils.isoDate(startDate),
-                                    startMin: startMin,
-                                    durMin: 60
-                                });
-
-                                if (!firstDate || startDate < firstDate) firstDate = startDate;
-                                imported++;
-                            } else {
-                                skipped++;
-                            }
-                        }
-                    }
-                });
-
-                if (firstDate) {
-                    this.currentMonday = Utils.getMonday(firstDate);
-                }
-
-                this.saveData();
-                this.updateCalendar();
-                this.updateWeekLabel();
-                this.showNotification(`${imported} Termine importiert.` + (skipped ? ` ${skipped} übersprungen.` : ''));
-            }
-
-            exportWeek() {
-                let text = '';
-                const weekStart = this.currentMonday;
-                const weekEnd = Utils.addDays(this.currentMonday, 4);
-                text += `WOCHENPLAN ${Utils.fmtDate(weekStart)} – ${Utils.fmtDate(weekEnd)}\n`;
-                text += '='.repeat(50) + '\n\n';
-
-                for (let i = 0; i < 5; i++) {
-                    const d = Utils.addDays(this.currentMonday, i);
-                    const dateISO = Utils.isoDate(d);
-                    const dayEvents = this.events.filter(ev => ev.dateISO === dateISO).sort((a, b) => a.startMin - b.startMin);
-
-                    text += CONFIG.DAYS[i] + '\n';
-                    if (dayEvents.length === 0) {
-                        text += '  (keine Termine)\n';
-                    } else {
-                        dayEvents.forEach(ev => {
-                            const hours = Math.round(ev.durMin / 60 * 10) / 10;
-                            const hourStr = hours % 1 === 0 ? hours.toFixed(0) : hours.toFixed(1);
-                            text += `  • ${ev.title} (${hourStr} Std.)\n`;
-                        });
-                    }
-                    text += '\n';
-                }
-
-                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            exportToJSON() {
+                const data = JSON.stringify(this.events, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `wochenplan_${Utils.fmtDate(weekStart).replace(/\./g, '-')}.txt`;
+                a.download = `wochenplaner_export_${this.formatDate(this.currentMonday).replace(/\./g, '-')}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                this.showNotification('Woche erfolgreich exportiert!');
-            }
-
-            showNotification(message) {
-                const notification = this.shadowRoot.getElementById('notification');
-                if (notification) {
-                    const text = this.shadowRoot.getElementById('notificationText');
-                    if (text) text.textContent = message;
-                    notification.classList.add('show');
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                    }, 3000);
-                }
+                alert('✅ Termine wurden als JSON-Datei exportiert!');
             }
         }
+        customElements.define('wochenplaner-kalender', WochenplanerKalender);
 
-        // WebComponent registrieren
-        customElements.define('wochenplaner-app', WochenplanerApp);
+        // Initialisierung
+        document.addEventListener('DOMContentLoaded', () => {
+            const kalender = document.querySelector('wochenplaner-kalender');
+            if (kalender) {
+                kalender.loadFromLocalStorage();
+            }
+        });
     </script>
 </body>
 </html>
