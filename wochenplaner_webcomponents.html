@@ -3,311 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAIT Wochenplaner (Web Components)</title>
+    <title>MAIT Wochenplaner - Beispielseite</title>
     <style>
-        body {
-            font-family: Segoe UI, Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f0f2f5;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
         }
-        h1 {
-            color: #2f6bff;
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
             text-align: center;
-            margin-bottom: 20px;
         }
-        .week-nav {
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .week-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .day-card {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .day-card:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .day-card h3 {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .day-card p {
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .event-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #764ba2;
+        }
+
+        .event-time {
+            font-weight: bold;
+            color: #764ba2;
+            font-size: 0.9em;
+        }
+
+        .event-title {
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .feature-box h3 {
+            font-size: 1.4em;
+            margin-bottom: 10px;
+        }
+
+        .feature-box p {
+            font-size: 0.95em;
+            opacity: 0.95;
+        }
+
+        .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .button-group {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
         }
-        wochenplaner-kalender {
-            display: block;
-            margin-top: 20px;
-        }
+
         button {
-            background: #2f6bff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 1em;
             cursor: pointer;
-            margin: 5px;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
+
         button:hover {
-            background: #1a52cc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📅 MAIT Wochenplaner (Web Components)</h1>
+        <header>
+            <h1>📅 MAIT Wochenplaner</h1>
+            <p>Ihr digitaler Partner für intelligente Zeitverwaltung</p>
+        </header>
 
-        <div class="week-nav">
-            <button onclick="document.querySelector('wochenplaner-kalender').prevWeek()">← Vorige Woche</button>
-            <h2 id="week-title">Woche: 14.08.2026 – 18.08.2026</h2>
-            <button onclick="document.querySelector('wochenplaner-kalender').nextWeek()">Nächste Woche →</button>
-        </div>
+        <div class="content">
+            <!-- Willkommenssection -->
+            <section class="section">
+                <h2>Willkommen beim MAIT Wochenplaner</h2>
+                <p style="font-size: 1.1em; color: #555; line-height: 1.8;">
+                    Der MAIT Wochenplaner ist eine moderne Web-Komponenten-basierte Lösung für intelligente Zeitverwaltung. 
+                    Mit intuitiven Funktionen und benutzerfreundlichem Design optimieren Sie Ihre Wochenplanung.
+                </p>
+            </section>
 
-        <button onclick="document.querySelector('wochenplaner-kalender').openModal()">➕ Neuer Termin</button>
-        <button onclick="document.querySelector('wochenplaner-kalender').saveToLocalStorage()">💾 Speichern</button>
-        <button onclick="document.querySelector('wochenplaner-kalender').loadFromLocalStorage()">📂 Laden</button>
-
-        <wochenplaner-kalender id="kalender"></wochenplaner-kalender>
-    </div>
-
-    <script>
-        // Custom Element: Wochenplaner-Termin
-        class WochenplanerTermin extends HTMLElement {
-            constructor() {
-                super();
-                this.attachShadow({ mode: 'open' });
-            }
-
-            connectedCallback() {
-                const title = this.getAttribute('titel') || 'Neuer Termin';
-                const start = this.getAttribute('start') || '00:00';
-                const end = this.getAttribute('end') || '00:00';
-                const id = this.getAttribute('id') || '';
-
-                this.shadowRoot.innerHTML = `
-                    <style>
-                        .termin {
-                            background: #e0662a;
-                            color: white;
-                            padding: 8px;
-                            margin: 5px 0;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            position: relative;
-                        }
-                        .termin:hover {
-                            background: #ff8c42;
-                        }
-                        .delete-btn {
-                            position: absolute;
-                            top: 5px;
-                            right: 5px;
-                            background: none;
-                            border: none;
-                            color: white;
-                            cursor: pointer;
-                            font-size: 14px;
-                        }
-                    </style>
-                    <div class="termin">
-                        <strong>${title}</strong><br>
-                        ${start} – ${end}
-                        <button class="delete-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+            <!-- Funktionen Section -->
+            <section class="section">
+                <h2>🚀 Kernfunktionen</h2>
+                <div class="feature-grid">
+                    <div class="feature-box">
+                        <div class="icon">📝</div>
+                        <h3>Termine erstellen</h3>
+                        <p>Fügen Sie schnell neue Termine mit Zeiten hinzu</p>
                     </div>
-                `;
-            }
-        }
-        customElements.define('wochenplaner-termin', WochenplanerTermin);
-
-        // Custom Element: Wochenplaner-Kalender
-        class WochenplanerKalender extends HTMLElement {
-            constructor() {
-                super();
-                this.attachShadow({ mode: 'open' });
-                this.currentMonday = new Date();
-                this.currentMonday.setDate(this.currentMonday.getDate() - this.currentMonday.getDay() + 1);
-                this.events = JSON.parse(localStorage.getItem('wochenplaner-events')) || [];
-                this.days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
-            }
-
-            connectedCallback() {
-                this.render();
-            }
-
-            render() {
-                const endDate = new Date(this.currentMonday);
-                endDate.setDate(endDate.getDate() + 4);
-
-                const weekTitle = document.getElementById('week-title');
-                if (weekTitle) {
-                    weekTitle.textContent = `Woche: ${this.formatDate(this.currentMonday)} – ${this.formatDate(endDate)}`;
-                }
-
-                this.shadowRoot.innerHTML = `
-                    <style>
-                        .week {
-                            display: flex;
-                            gap: 10px;
-                        }
-                        .day {
-                            flex: 1;
-                            border: 1px solid #ddd;
-                            padding: 10px;
-                            border-radius: 5px;
-                            background: white;
-                            min-height: 200px;
-                        }
-                        .day-header {
-                            font-weight: bold;
-                            text-align: center;
-                            background: #2f6bff;
-                            color: white;
-                            padding: 8px;
-                            margin: -10px -10px 10px -10px;
-                            border-radius: 5px 5px 0 0;
-                        }
-                        .modal {
-                            display: none;
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(0, 0, 0, 0.5);
-                            z-index: 1000;
-                            justify-content: center;
-                            align-items: center;
-                        }
-                        .modal.active {
-                            display: flex;
-                        }
-                        .modal-content {
-                            background: white;
-                            padding: 20px;
-                            border-radius: 10px;
-                            width: 400px;
-                            max-width: 90%;
-                        }
-                        input, select {
-                            width: 100%;
-                            padding: 8px;
-                            margin: 5px 0;
-                            border: 1px solid #ddd;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        }
-                        button {
-                            background: #2f6bff;
-                            color: white;
-                            border: none;
-                            padding: 8px 15px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            margin: 5px;
-                        }
-                        button:hover {
-                            background: #1a52cc;
-                        }
-                    </style>
-                    <div class="week" id="week">
-                        ${this.days.map((day, i) => {
-                            const dayDate = new Date(this.currentMonday);
-                            dayDate.setDate(dayDate.getDate() + i);
-                            const dayISO = dayDate.toISOString().split('T')[0];
-                            const dayEvents = this.events.filter(e => e.day === day);
-
-                            return `
-                                <div class="day">
-                                    <div class="day-header">${day} (${this.formatDate(dayDate)})</div>
-                                    ${dayEvents.map(event => `
-                                        <wochenplaner-termin
-                                            id="${event.id}"
-                                            titel="${event.title}"
-                                            start="${event.start}"
-                                            end="${event.end}"
-                                            onclick="this.parentElement.removeChild(this)">
-                                        </wochenplaner-termin>
-                                    `).join('')}
-                                </div>
-                            `;
-                        }).join('')}
+                    <div class="feature-box">
+                        <div class="icon">💾</div>
+                        <h3>Speichern & Laden</h3>
+                        <p>Persistente Speicherung in LocalStorage</p>
                     </div>
-                    <div class="modal" id="modal">
-                        <div class="modal-content">
-                            <h2>Neuer Termin</h2>
-                            <input type="text" id="event-title" placeholder="Titel" required>
-                            <select id="event-day">
-                                ${this.days.map(day => `<option value="${day}">${day}</option>`).join('')}
-                            </select>
-                            <input type="time" id="event-start" placeholder="Startzeit" required>
-                            <input type="time" id="event-end" placeholder="Endzeit" required>
-                            <button onclick="document.querySelector('wochenplaner-kalender').addEvent()">Termin hinzufügen</button>
-                            <button onclick="document.querySelector('wochenplaner-kalender').closeModal()" style="background: #666;">Abbrechen</button>
+                    <div class="feature-box">
+                        <div class="icon">🔄</div>
+                        <h3>Wochennavigation</h3>
+                        <p>Einfaches Navigieren zwischen Wochen</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">🎨</div>
+                        <h3>Modernes Design</h3>
+                        <p>Responsive und visuell ansprechend</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Beispielwoche Section -->
+            <section class="section">
+                <h2>📊 Beispielwoche (14. - 18. August 2026)</h2>
+                <div class="week-display">
+                    <div class="day-card">
+                        <h3>Montag</h3>
+                        <p>14. August 2026</p>
+                        <div class="event-item">
+                            <div class="event-time">09:00 - 10:30</div>
+                            <div class="event-title">Team Meeting</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">14:00 - 15:00</div>
+                            <div class="event-title">Projekt Planung</div>
                         </div>
                     </div>
-                `;
-            }
 
-            formatDate(date) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}.${month}.${year}`;
-            }
+                    <div class="day-card">
+                        <h3>Dienstag</h3>
+                        <p>15. August 2026</p>
+                        <div class="event-item">
+                            <div class="event-time">10:00 - 11:00</div>
+                            <div class="event-title">Code Review</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">15:30 - 16:30</div>
+                            <div class="event-title">Client Call</div>
+                        </div>
+                    </div>
 
-            prevWeek() {
-                this.currentMonday.setDate(this.currentMonday.getDate() - 7);
-                this.render();
-            }
+                    <div class="day-card">
+                        <h3>Mittwoch</h3>
+                        <p>16. August 2026</p>
+                        <div class="event-item">
+                            <div class="event-time">09:00 - 12:00</div>
+                            <div class="event-title">Workshop</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">13:00 - 14:00</div>
+                            <div class="event-title">Mittagspause</div>
+                        </div>
+                    </div>
 
-            nextWeek() {
-                this.currentMonday.setDate(this.currentMonday.getDate() + 7);
-                this.render();
-            }
+                    <div class="day-card">
+                        <h3>Donnerstag</h3>
+                        <p>17. August 2026</p>
+                        <div class="event-item">
+                            <div class="event-time">11:00 - 12:00</div>
+                            <div class="event-title">1:1 Meeting</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">16:00 - 17:00</div>
+                            <div class="event-title">Dokumentation</div>
+                        </div>
+                    </div>
 
-            openModal() {
-                this.shadowRoot.getElementById('modal').classList.add('active');
-            }
+                    <div class="day-card">
+                        <h3>Freitag</h3>
+                        <p>18. August 2026</p>
+                        <div class="event-item">
+                            <div class="event-time">10:00 - 11:00</div>
+                            <div class="event-title">Wochenrückblick</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time">14:00 - 15:00</div>
+                            <div class="event-title">Planung nächste Woche</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-            closeModal() {
-                this.shadowRoot.getElementById('modal').classList.remove('active');
-            }
+            <!-- Technologie Section -->
+            <section class="section">
+                <h2>🛠️ Technologie</h2>
+                <div class="info-box">
+                    <strong>Web Components Standard:</strong> Der Wochenplaner nutzt moderne Web Components (Custom Elements) 
+                    für eine modulare und wartbare Architektur.
+                </div>
+                <div class="info-box">
+                    <strong>Lokale Speicherung:</strong> Alle Termine werden im Browser LocalStorage gespeichert 
+                    und bleiben über Sessions hinweg erhalten.
+                </div>
+                <div class="info-box">
+                    <strong>Responsive Design:</strong> Das Layout passt sich automatisch an verschiedene Bildschirmgrößen an.
+                </div>
+            </section>
 
-            addEvent() {
-                const title = this.shadowRoot.getElementById('event-title').value;
-                const day = this.shadowRoot.getElementById('event-day').value;
-                const start = this.shadowRoot.getElementById('event-start').value;
-                const end = this.shadowRoot.getElementById('event-end').value;
+            <!-- Verwendungsbeispiel -->
+            <section class="section">
+                <h2>💡 Verwendungsbeispiel</h2>
+                <p style="margin-bottom: 15px;">Der Wochenplaner wird mit einem einfachen HTML-Tag eingebunden:</p>
+                <pre>&lt;wochenplaner-kalender id="kalender"&gt;&lt;/wochenplaner-kalender&gt;</pre>
+                <p style="margin-bottom: 15px;">Grundlegende Funktionen:</p>
+                <div class="button-group">
+                    <button>➕ Neuer Termin</button>
+                    <button>💾 Speichern</button>
+                    <button>📂 Laden</button>
+                    <button>← Vorige Woche</button>
+                    <button>Nächste Woche →</button>
+                </div>
+            </section>
 
-                if (!title || !day || !start || !end) {
-                    alert('Bitte alle Felder ausfüllen!');
-                    return;
-                }
+            <!-- MAIT Info -->
+            <section class="section">
+                <h2>🏢 Über MAIT</h2>
+                <p style="font-size: 1.05em; color: #555; line-height: 1.8;">
+                    <strong>MAIT</strong> ist Ihr Digital Business Partner für intelligente Lösungen im Mittelstand. 
+                    Mit Fokus auf <strong>Market, Applications, Infrastructure und Thought</strong> begleiten wir Ihre digitale Transformation 
+                    mit innovativen Tools wie diesem Wochenplaner. Unsere Expertise verbindet technologische Excellence mit verlässlicher Partnerschaft.
+                </p>
+            </section>
+        </div>
 
-                const newEvent = {
-                    id: Date.now(),
-                    title,
-                    day,
-                    start,
-                    end
-                };
-
-                this.events.push(newEvent);
-                this.render();
-                this.closeModal();
-            }
-
-            saveToLocalStorage() {
-                localStorage.setItem('wochenplaner-events', JSON.stringify(this.events));
-                alert('Termine wurden im Browser gespeichert!');
-            }
-
-            loadFromLocalStorage() {
-                const savedEvents = localStorage.getItem('wochenplaner-events');
-                if (savedEvents) {
-                    this.events = JSON.parse(savedEvents);
-                    this.render();
-                    alert('Termine wurden geladen!');
-                } else {
-                    alert('Keine gespeicherten Termine gefunden!');
-                }
-            }
-        }
-        customElements.define('wochenplaner-kalender', WochenplanerKalender);
-    </script>
+        <footer>
+            <p>&copy; 2026 MAIT - Ihr Digital Business Partner | Wochenplaner Web Components v1.0</p>
+        </footer>
+    </div>
 </body>
 </html>
