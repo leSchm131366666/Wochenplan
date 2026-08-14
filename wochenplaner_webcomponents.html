@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAIT Wochenplaner (Web Components)</title>
+    <style>
+        body {
+            font-family: Segoe UI, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2f6bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        wochenplaner-kalender {
+            display: block;
+            margin-top: 20px;
+        }
+        button {
+            background: #2f6bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1a52cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 MAIT Wochenplaner (Web Components)</h1>
+
+        <div class="week-nav">
+            <button onclick="document.querySelector('wochenplaner-kalender').prevWeek()">← Vorige Woche</button>
+            <h2 id="week-title">Woche: 14.08.2026 – 18.08.2026</h2>
+            <button onclick="document.querySelector('wochenplaner-kalender').nextWeek()">Nächste Woche →</button>
+        </div>
+
+        <button onclick="document.querySelector('wochenplaner-kalender').openModal()">➕ Neuer Termin</button>
+        <button onclick="document.querySelector('wochenplaner-kalender').saveToLocalStorage()">💾 Speichern</button>
+        <button onclick="document.querySelector('wochenplaner-kalender').loadFromLocalStorage()">📂 Laden</button>
+
+        <wochenplaner-kalender id="kalender"></wochenplaner-kalender>
+    </div>
+
+    <script>
+        // Custom Element: Wochenplaner-Termin
+        class WochenplanerTermin extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+            }
+
+            connectedCallback() {
+                const title = this.getAttribute('titel') || 'Neuer Termin';
+                const start = this.getAttribute('start') || '00:00';
+                const end = this.getAttribute('end') || '00:00';
+                const id = this.getAttribute('id') || '';
+
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        .termin {
+                            background: #e0662a;
+                            color: white;
+                            padding: 8px;
+                            margin: 5px 0;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            position: relative;
+                        }
+                        .termin:hover {
+                            background: #ff8c42;
+                        }
+                        .delete-btn {
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            background: none;
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 14px;
+                        }
+                    </style>
+                    <div class="termin">
+                        <strong>${title}</strong><br>
+                        ${start} – ${end}
+                        <button class="delete-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+                    </div>
+                `;
+            }
+        }
+        customElements.define('wochenplaner-termin', WochenplanerTermin);
+
+        // Custom Element: Wochenplaner-Kalender
+        class WochenplanerKalender extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                this.currentMonday = new Date();
+                this.currentMonday.setDate(this.currentMonday.getDate() - this.currentMonday.getDay() + 1);
+                this.events = JSON.parse(localStorage.getItem('wochenplaner-events')) || [];
+                this.days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+            }
+
+            connectedCallback() {
+                this.render();
+            }
+
+            render() {
+                const endDate = new Date(this.currentMonday);
+                endDate.setDate(endDate.getDate() + 4);
+
+                const weekTitle = document.getElementById('week-title');
+                if (weekTitle) {
+                    weekTitle.textContent = `Woche: ${this.formatDate(this.currentMonday)} – ${this.formatDate(endDate)}`;
+                }
+
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        .week {
+                            display: flex;
+                            gap: 10px;
+                        }
+                        .day {
+                            flex: 1;
+                            border: 1px solid #ddd;
+                            padding: 10px;
+                            border-radius: 5px;
+                            background: white;
+                            min-height: 200px;
+                        }
+                        .day-header {
+                            font-weight: bold;
+                            text-align: center;
+                            background: #2f6bff;
+                            color: white;
+                            padding: 8px;
+                            margin: -10px -10px 10px -10px;
+                            border-radius: 5px 5px 0 0;
+                        }
+                        .modal {
+                            display: none;
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.5);
+                            z-index: 1000;
+                            justify-content: center;
+                            align-items: center;
+                        }
+                        .modal.active {
+                            display: flex;
+                        }
+                        .modal-content {
+                            background: white;
+                            padding: 20px;
+                            border-radius: 10px;
+                            width: 400px;
+                            max-width: 90%;
+                        }
+                        input, select {
+                            width: 100%;
+                            padding: 8px;
+                            margin: 5px 0;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            box-sizing: border-box;
+                        }
+                        button {
+                            background: #2f6bff;
+                            color: white;
+                            border: none;
+                            padding: 8px 15px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            margin: 5px;
+                        }
+                        button:hover {
+                            background: #1a52cc;
+                        }
+                    </style>
+                    <div class="week" id="week">
+                        ${this.days.map((day, i) => {
+                            const dayDate = new Date(this.currentMonday);
+                            dayDate.setDate(dayDate.getDate() + i);
+                            const dayISO = dayDate.toISOString().split('T')[0];
+                            const dayEvents = this.events.filter(e => e.day === day);
+
+                            return `
+                                <div class="day">
+                                    <div class="day-header">${day} (${this.formatDate(dayDate)})</div>
+                                    ${dayEvents.map(event => `
+                                        <wochenplaner-termin
+                                            id="${event.id}"
+                                            titel="${event.title}"
+                                            start="${event.start}"
+                                            end="${event.end}"
+                                            onclick="this.parentElement.removeChild(this)">
+                                        </wochenplaner-termin>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="modal" id="modal">
+                        <div class="modal-content">
+                            <h2>Neuer Termin</h2>
+                            <input type="text" id="event-title" placeholder="Titel" required>
+                            <select id="event-day">
+                                ${this.days.map(day => `<option value="${day}">${day}</option>`).join('')}
+                            </select>
+                            <input type="time" id="event-start" placeholder="Startzeit" required>
+                            <input type="time" id="event-end" placeholder="Endzeit" required>
+                            <button onclick="document.querySelector('wochenplaner-kalender').addEvent()">Termin hinzufügen</button>
+                            <button onclick="document.querySelector('wochenplaner-kalender').closeModal()" style="background: #666;">Abbrechen</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}.${month}.${year}`;
+            }
+
+            prevWeek() {
+                this.currentMonday.setDate(this.currentMonday.getDate() - 7);
+                this.render();
+            }
+
+            nextWeek() {
+                this.currentMonday.setDate(this.currentMonday.getDate() + 7);
+                this.render();
+            }
+
+            openModal() {
+                this.shadowRoot.getElementById('modal').classList.add('active');
+            }
+
+            closeModal() {
+                this.shadowRoot.getElementById('modal').classList.remove('active');
+            }
+
+            addEvent() {
+                const title = this.shadowRoot.getElementById('event-title').value;
+                const day = this.shadowRoot.getElementById('event-day').value;
+                const start = this.shadowRoot.getElementById('event-start').value;
+                const end = this.shadowRoot.getElementById('event-end').value;
+
+                if (!title || !day || !start || !end) {
+                    alert('Bitte alle Felder ausfüllen!');
+                    return;
+                }
+
+                const newEvent = {
+                    id: Date.now(),
+                    title,
+                    day,
+                    start,
+                    end
+                };
+
+                this.events.push(newEvent);
+                this.render();
+                this.closeModal();
+            }
+
+            saveToLocalStorage() {
+                localStorage.setItem('wochenplaner-events', JSON.stringify(this.events));
+                alert('Termine wurden im Browser gespeichert!');
+            }
+
+            loadFromLocalStorage() {
+                const savedEvents = localStorage.getItem('wochenplaner-events');
+                if (savedEvents) {
+                    this.events = JSON.parse(savedEvents);
+                    this.render();
+                    alert('Termine wurden geladen!');
+                } else {
+                    alert('Keine gespeicherten Termine gefunden!');
+                }
+            }
+        }
+        customElements.define('wochenplaner-kalender', WochenplanerKalender);
+    </script>
+</body>
+</html>
